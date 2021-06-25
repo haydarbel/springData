@@ -26,11 +26,12 @@ class FiliaalRepositoryTest extends AbstractTransactionalJUnit4SpringContextTest
 
     private long idVanAlfa() {
         return jdbcTemplate.queryForObject(
-                "select id from filialen where naam = 'Alfa'" , Long.class);
+                "select id from filialen where naam = 'Alfa'", Long.class);
     }
+
     private long idVanBravo() {
         return jdbcTemplate.queryForObject(
-                "select id from filialen where naam = 'Bravo'" , Long.class);
+                "select id from filialen where naam = 'Bravo'", Long.class);
     }
 
     @Test
@@ -117,6 +118,25 @@ class FiliaalRepositoryTest extends AbstractTransactionalJUnit4SpringContextTest
 
     @Test
     void countByGemeente() {
+        assertThat(repository.countByGemeente("Brussel"))
+                .isEqualTo(countRowsInTableWhere(FILIALEN, "gemeente='Brussel'"));
+    }
 
+    @Test
+    void findGemiddeldeOmzet() {
+        assertThat(repository.findGemiddeldeOmzet())
+                .isEqualByComparingTo(jdbcTemplate.queryForObject(
+                        "select avg(omzet) from filialen", BigDecimal.class));
+    }
+
+    @Test
+    void findMetHoogsteOmzet() {
+        assertThat(repository.findMetHoogsteOmzet())
+                .hasSize(countRowsInTableWhere(FILIALEN, "omzet=(select max(omzet) from filialen)"))
+                .first()
+                .extracting(Filiaal::getNaam).isEqualTo(
+                        jdbcTemplate.queryForObject(
+                                "select naam from filialen where omzet = (select max(omzet) from filialen)",
+                                String.class));
     }
 }
